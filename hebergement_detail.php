@@ -99,4 +99,81 @@ include "includes/header.php";
     </aside>
 </section>
 
+<?php if (!empty($hotel['recent_reviews'])): ?>
+<section class="reviews-section panel" style="max-width:900px;margin:24px auto;">
+    <h2>Avis clients</h2>
+    <div class="reviews-list" id="reviews-list">
+        <?php foreach ($hotel['recent_reviews'] as $review): ?>
+        <article class="review-item">
+            <div class="review-header">
+                <strong><?= htmlspecialchars($review['author']) ?></strong>
+                <span class="review-stars"><?= str_repeat('★', (int)$review['rating']) ?><?= str_repeat('☆', 5 - (int)$review['rating']) ?></span>
+            </div>
+            <p><?= htmlspecialchars($review['text']) ?></p>
+        </article>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
+
+<section class="review-form-section panel" style="max-width:900px;margin:24px auto;">
+    <h2>Laisser un avis</h2>
+    <?php if (!empty($_SESSION['user_id'])): ?>
+    <form id="hotel-review-form">
+        <input type="hidden" id="review-hotel-id" value="<?= (int)$hotel['id'] ?>">
+        <label>Note
+            <select id="review-rating">
+                <option value="5">★★★★★ Excellent</option>
+                <option value="4">★★★★☆ Très bien</option>
+                <option value="3">★★★☆☆ Bien</option>
+                <option value="2">★★☆☆☆ Moyen</option>
+                <option value="1">★☆☆☆☆ Décevant</option>
+            </select>
+        </label>
+        <label>Votre commentaire
+            <textarea id="review-text" rows="4" placeholder="Partagez votre expérience..." style="width:100%;margin-top:6px;padding:10px;border-radius:8px;border:1px solid var(--color-border,#ddd);resize:vertical;"></textarea>
+        </label>
+        <button class="btn btn-primary" type="submit" style="margin-top:12px;">Publier l'avis</button>
+        <p id="review-msg" style="margin-top:8px;color:green;"></p>
+    </form>
+    <script>
+    document.getElementById('hotel-review-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = this.querySelector('button[type=submit]');
+        btn.disabled = true;
+        fetch('includes/api_avis.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'hotel',
+                hotel_id: parseInt(document.getElementById('review-hotel-id').value),
+                rating: parseInt(document.getElementById('review-rating').value),
+                text: document.getElementById('review-text').value
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                document.getElementById('review-msg').textContent = 'Avis publié, merci !';
+                var list = document.getElementById('reviews-list');
+                if (!list) { list = document.createElement('div'); list.id='reviews-list'; this.closest('section').before(list); }
+                var art = document.createElement('article');
+                art.className = 'review-item';
+                art.innerHTML = '<div class="review-header"><strong>' + data.author + '</strong><span class="review-stars">' + '★'.repeat(data.rating) + '☆'.repeat(5-data.rating) + '</span></div><p>' + data.text + '</p>';
+                list.prepend(art);
+                document.getElementById('review-text').value = '';
+            } else {
+                document.getElementById('review-msg').style.color = 'red';
+                document.getElementById('review-msg').textContent = data.error || 'Erreur.';
+            }
+            btn.disabled = false;
+        })
+        .catch(() => { document.getElementById('review-msg').style.color='red'; document.getElementById('review-msg').textContent='Erreur réseau.'; btn.disabled=false; });
+    });
+    </script>
+    <?php else: ?>
+    <p><a href="compte.php">Connectez-vous</a> pour laisser un avis.</p>
+    <?php endif; ?>
+</section>
+
 <?php include "includes/footer.php"; ?>

@@ -97,7 +97,7 @@ include "includes/header.php";
 
     <section class="panel">
         <h2>Avis voyageurs</h2>
-        <div class="review-grid">
+        <div class="review-grid" id="dest-reviews-list">
             <?php foreach ($reviews as $review): ?>
                 <article class="review-card">
                     <strong><?= str_repeat("⭐", (int) $review["rating"]) ?></strong>
@@ -106,6 +106,62 @@ include "includes/header.php";
                 </article>
             <?php endforeach; ?>
         </div>
+
+        <?php if (!empty($_SESSION['user_id'])): ?>
+        <form id="dest-review-form" style="margin-top:24px;max-width:500px;">
+            <h3>Partagez votre expérience</h3>
+            <input type="hidden" id="dest-name" value="<?= htmlspecialchars($destination['name']) ?>">
+            <label>Note
+                <select id="dest-rating" style="display:block;width:100%;margin:6px 0 12px;padding:8px;border-radius:8px;">
+                    <option value="5">★★★★★ Excellent</option>
+                    <option value="4">★★★★☆ Très bien</option>
+                    <option value="3">★★★☆☆ Bien</option>
+                    <option value="2">★★☆☆☆ Moyen</option>
+                    <option value="1">★☆☆☆☆ Décevant</option>
+                </select>
+            </label>
+            <label>Commentaire
+                <textarea id="dest-text" rows="3" placeholder="Votre avis sur cette destination..." style="display:block;width:100%;margin:6px 0 12px;padding:10px;border-radius:8px;border:1px solid var(--color-border,#ddd);resize:vertical;"></textarea>
+            </label>
+            <button class="btn btn-primary" type="submit">Publier</button>
+            <p id="dest-review-msg" style="margin-top:8px;color:green;"></p>
+        </form>
+        <script>
+        document.getElementById('dest-review-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = this.querySelector('button[type=submit]');
+            btn.disabled = true;
+            fetch('includes/api_avis.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    action: 'plateforme',
+                    destination: document.getElementById('dest-name').value,
+                    rating: parseInt(document.getElementById('dest-rating').value),
+                    text: document.getElementById('dest-text').value
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    document.getElementById('dest-review-msg').textContent = 'Avis publié, merci !';
+                    var art = document.createElement('article');
+                    art.className = 'review-card';
+                    art.innerHTML = '<strong>' + '⭐'.repeat(data.rating) + '</strong><p>' + data.text + '</p><span>' + data.user_name + ' · ' + document.getElementById('dest-name').value + '</span>';
+                    document.getElementById('dest-reviews-list').prepend(art);
+                    document.getElementById('dest-text').value = '';
+                } else {
+                    document.getElementById('dest-review-msg').style.color='red';
+                    document.getElementById('dest-review-msg').textContent = data.error || 'Erreur.';
+                }
+                btn.disabled = false;
+            })
+            .catch(() => { document.getElementById('dest-review-msg').style.color='red'; document.getElementById('dest-review-msg').textContent='Erreur réseau.'; btn.disabled=false; });
+        });
+        </script>
+        <?php else: ?>
+        <p style="margin-top:16px;"><a href="compte.php">Connectez-vous</a> pour laisser un avis.</p>
+        <?php endif; ?>
     </section>
 </div>
 
