@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once "includes/data.php";
 $pageTitle = "Panier";
 
@@ -60,10 +61,7 @@ if ($transport && !$hotel && !count($selectedActivities)) {
     $cartType = "Activité uniquement";
 }
 
-include "includes/header.php";
-
 // Sauvegarde automatique du panier en base si l'utilisateur est connecté
-session_start();
 if (!empty($_SESSION['user_id']) && $destination) {
     require_once 'includes/db.php';
     $db = getDB();
@@ -119,6 +117,8 @@ if (!empty($_SESSION['user_id']) && $destination) {
         ]);
     } catch (Exception $e) {}
 }
+
+include "includes/header.php";
 ?>
 
 <section class="cart-page">
