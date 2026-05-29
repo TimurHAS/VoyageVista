@@ -897,6 +897,49 @@ output {
     margin-right: 14px;
 }
 
+.confirmation-page {
+    max-width: 600px;
+    margin: 60px auto;
+    padding: 0 20px;
+    text-align: center;
+}
+
+.confirmation-card {
+    padding: 48px 40px;
+}
+
+.confirmation-icon {
+    width: 72px;
+    height: 72px;
+    background: #22c55e;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 2rem;
+    line-height: 72px;
+    margin: 0 auto 24px;
+}
+
+.confirmation-card h1 {
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+}
+
+.confirmation-subtitle {
+    margin-bottom: 32px;
+}
+
+.confirmation-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.confirmation-hint {
+    font-size: 0.875rem;
+}
+
 .cart-page {
     max-width: 1180px;
     margin: 0 auto;
