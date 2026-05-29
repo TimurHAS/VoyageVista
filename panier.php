@@ -61,6 +61,64 @@ if ($transport && !$hotel && !count($selectedActivities)) {
 }
 
 include "includes/header.php";
+
+// Sauvegarde automatique du panier en base si l'utilisateur est connecté
+session_start();
+if (!empty($_SESSION['user_id']) && $destination) {
+    require_once 'includes/db.php';
+    $db = getDB();
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS carts (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL UNIQUE,
+            destination_id INT UNSIGNED DEFAULT NULL,
+            transport_id INT UNSIGNED DEFAULT NULL,
+            hotel_id INT UNSIGNED DEFAULT NULL,
+            activity_ids TEXT DEFAULT NULL,
+            adults TINYINT UNSIGNED NOT NULL DEFAULT 2,
+            children TINYINT UNSIGNED NOT NULL DEFAULT 0,
+            nights TINYINT UNSIGNED NOT NULL DEFAULT 7,
+            bags VARCHAR(20) DEFAULT '0',
+            ticket VARCHAR(20) DEFAULT 'Basic',
+            seat VARCHAR(20) DEFAULT 'Standard',
+            room_type VARCHAR(20) DEFAULT 'standard',
+            hotel_options TEXT DEFAULT NULL,
+            checkin DATE DEFAULT NULL,
+            checkout DATE DEFAULT NULL,
+            status ENUM('open','confirmed','cancelled') NOT NULL DEFAULT 'open',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB");
+    } catch (Exception $e) {}
+    try {
+        $stmt = $db->prepare("INSERT INTO carts
+            (user_id, destination_id, transport_id, hotel_id, activity_ids, adults, children, nights, bags, ticket, seat, room_type, hotel_options, checkin, checkout)
+            VALUES (:u, :dest, :tr, :ht, :acts, :ad, :ch, :ni, :bags, :ticket, :seat, :room, :hopt, :ci, :co)
+            ON DUPLICATE KEY UPDATE
+                destination_id=VALUES(destination_id), transport_id=VALUES(transport_id),
+                hotel_id=VALUES(hotel_id), activity_ids=VALUES(activity_ids),
+                adults=VALUES(adults), children=VALUES(children), nights=VALUES(nights),
+                bags=VALUES(bags), ticket=VALUES(ticket), seat=VALUES(seat),
+                room_type=VALUES(room_type), hotel_options=VALUES(hotel_options),
+                checkin=VALUES(checkin), checkout=VALUES(checkout), status='open'");
+        $stmt->execute([
+            ':u'      => $_SESSION['user_id'],
+            ':dest'   => $destination['id'],
+            ':tr'     => $transport ? $transport['id'] : null,
+            ':ht'     => $hotel ? $hotel['id'] : null,
+            ':acts'   => $activityIds ? implode(',', $activityIds) : '',
+            ':ad'     => $adults,
+            ':ch'     => $children,
+            ':ni'     => $nights,
+            ':bags'   => $bags,
+            ':ticket' => $ticket,
+            ':seat'   => $seat,
+            ':room'   => $roomType,
+            ':hopt'   => json_encode($hotelOptions),
+            ':ci'     => $checkin ?: null,
+            ':co'     => $checkout ?: null,
+        ]);
+    } catch (Exception $e) {}
+}
 ?>
 
 <section class="cart-page">

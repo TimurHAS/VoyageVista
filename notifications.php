@@ -1,21 +1,29 @@
 <?php
-require_once "includes/data.php";
-$pageTitle = "Notifications";
+// ============================================================
+//  VoyageVista — notifications.php  (version base de données)
+// ============================================================
+require_once 'includes/data.php';   // charge la session + $notifications
+$pageTitle = 'Notifications';
 
-$category = trim($_GET["category"] ?? "Toutes");
-$visibleNotifications = array_filter($notifications, function ($notification) use ($category) {
-    return $category === "Toutes" || $notification["category"] === $category;
-});
+$loggedIn = isset($_SESSION['user_id']);
 
-$notificationCategories = ["Toutes", "Réservations", "Trajets", "Hébergements", "Activités", "Promotions", "Système"];
-$selectedNotification = array_values($visibleNotifications)[0] ?? $notifications[0];
-$detailDestination = findById($destinations, 1);
-$detailHotel = findById($hotels, 1);
+$category = trim($_GET['category'] ?? 'Toutes');
+$visibleNotifications = array_filter(
+    $notifications,
+    fn($n) => $category === 'Toutes' || $n['category'] === $category
+);
+
+$notificationCategories = ['Toutes','Réservations','Trajets','Hébergements','Activités','Promotions','Système'];
+$selectedNotification   = array_values($visibleNotifications)[0] ?? ($notifications[0] ?? []);
+$detailDestination      = findById($destinations, 1);
+$detailHotel            = findById($hotels, 1);
+
+include 'includes/header.php';
 ?>
-<?php include "includes/header.php"; ?>
 
-<section data-auth-required>
-<div class="center-page" data-auth-locked>
+<section>
+<?php if (!$loggedIn): ?>
+<div class="center-page">
     <div class="panel auth-locked">
         <p class="eyebrow">Accès connecté</p>
         <h1>Connectez-vous pour voir vos notifications</h1>
@@ -23,18 +31,20 @@ $detailHotel = findById($hotels, 1);
         <a class="btn btn-primary" href="compte.php">Se connecter</a>
     </div>
 </div>
+<?php else: ?>
+<div class="notifications-board">
 
-<div class="notifications-board" data-auth-content>
     <aside class="notification-sidebar panel">
         <h1>🔔 Notifications</h1>
         <nav class="side-nav notification-nav">
             <?php foreach ($notificationCategories as $item): ?>
                 <?php
-                $count = $item === "Toutes"
+                $count = $item === 'Toutes'
                     ? count($notifications)
-                    : count(array_filter($notifications, fn($notification) => $notification["category"] === $item));
+                    : count(array_filter($notifications, fn($n) => $n['category'] === $item));
                 ?>
-                <a class="<?= $category === $item ? "active" : "" ?>" href="notifications.php?category=<?= urlencode($item) ?>">
+                <a class="<?= $category === $item ? 'active' : '' ?>"
+                   href="notifications.php?category=<?= urlencode($item) ?>">
                     <span><?= htmlspecialchars($item) ?></span>
                     <b><?= (int) $count ?></b>
                 </a>
@@ -49,45 +59,89 @@ $detailHotel = findById($hotels, 1);
                 <p class="eyebrow">Centre de messages</p>
                 <h2>Toutes les notifications</h2>
             </div>
-            <button class="btn btn-light" type="button" data-toast-button="Toutes les notifications sont marquées comme lues.">Marquer tout comme lu</button>
+            <button class="btn btn-light" id="mark-all-read">Marquer tout comme lu</button>
         </div>
 
         <div class="notification-list clean-list">
             <?php foreach ($visibleNotifications as $notification): ?>
-                <article class="notification-card rich-notification">
-                    <span class="notif-round <?= htmlspecialchars($notification["color"]) ?>"><?= htmlspecialchars($notification["icon"]) ?></span>
-                    <div>
-                        <h3><?= htmlspecialchars($notification["title"]) ?> <small>•</small></h3>
-                        <p><?= htmlspecialchars($notification["message"]) ?></p>
-                    </div>
-                    <time><?= htmlspecialchars($notification["date"]) ?></time>
-                </article>
+            <article class="notification-card rich-notification <?= $notification['is_read'] ? 'is-read' : '' ?>"
+                     data-notif-id="<?= (int) $notification['id'] ?>">
+                <span class="notif-round <?= htmlspecialchars($notification['color']) ?>">
+                    <?= htmlspecialchars($notification['icon']) ?>
+                </span>
+                <div>
+                    <h3><?= htmlspecialchars($notification['title']) ?> <small>•</small></h3>
+                    <p><?= htmlspecialchars($notification['message']) ?></p>
+                </div>
+                <time><?= htmlspecialchars(
+                    date('d/m H:i', strtotime($notification['created_at']))
+                ) ?></time>
+            </article>
             <?php endforeach; ?>
         </div>
     </section>
 
+    <?php if ($selectedNotification): ?>
     <aside class="notification-detail panel">
         <div class="detail-heading">
-            <h2><?= htmlspecialchars($selectedNotification["title"]) ?></h2>
-            <span><?= htmlspecialchars($selectedNotification["category"]) ?></span>
+            <h2><?= htmlspecialchars($selectedNotification['title'] ?? '') ?></h2>
+            <span><?= htmlspecialchars($selectedNotification['category'] ?? '') ?></span>
         </div>
-        <img src="<?= htmlspecialchars($detailDestination["image"]) ?>" alt="<?= htmlspecialchars($detailDestination["name"]) ?>">
-        <h3><?= htmlspecialchars($detailHotel["name"]) ?></h3>
-        <p><?= htmlspecialchars($detailDestination["name"]) ?> · <?= htmlspecialchars($detailDestination["country"]) ?></p>
-        <p><?= htmlspecialchars($selectedNotification["message"]) ?></p>
+        <?php if ($detailDestination): ?>
+        <img src="<?= htmlspecialchars($detailDestination['image']) ?>"
+             alt="<?= htmlspecialchars($detailDestination['name']) ?>">
+        <?php endif; ?>
+        <?php if ($detailHotel): ?>
+        <h3><?= htmlspecialchars($detailHotel['name']) ?></h3>
+        <p><?= htmlspecialchars($detailDestination['name'] ?? '') ?> · <?= htmlspecialchars($detailDestination['country'] ?? '') ?></p>
+        <?php endif; ?>
+        <p><?= htmlspecialchars($selectedNotification['message'] ?? '') ?></p>
         <div class="notification-summary">
             <div><span>Arrivée</span><strong>15 juin 2026</strong></div>
             <div><span>Départ</span><strong>22 juin 2026</strong></div>
             <div><span>Voyageurs</span><strong>2 adultes</strong></div>
             <div><span>Chambre</span><strong>Suite Deluxe</strong></div>
         </div>
-        <a class="btn btn-primary full" href="panier.php?destination=1&transport=1&hotel=1&activities=1,7">Voir ma réservation</a>
+        <a class="btn btn-primary full"
+           href="panier.php?destination=1&transport=1&hotel=1&activities=1,7">Voir ma réservation</a>
         <div class="notification-actions">
-            <button type="button" data-toast-button="Notification marquée comme lue.">Marquer comme lu</button>
-            <button type="button" data-toast-button="Notification supprimée.">Supprimer</button>
+            <button type="button" id="mark-one-read"
+                    data-id="<?= (int) ($selectedNotification['id'] ?? 0) ?>">Marquer comme lu</button>
+            <button type="button" id="delete-one"
+                    data-id="<?= (int) ($selectedNotification['id'] ?? 0) ?>">Supprimer</button>
         </div>
     </aside>
+    <?php endif; ?>
+
 </div>
+<?php endif; ?>
 </section>
 
-<?php include "includes/footer.php"; ?>
+<?php if ($loggedIn): ?>
+<script>
+async function notifAction(action, id = null) {
+    return fetch('includes/api_notifications.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, id }),
+    }).then(r => r.json());
+}
+
+document.getElementById('mark-all-read')?.addEventListener('click', async () => {
+    await notifAction('read_all');
+    location.reload();
+});
+
+document.getElementById('mark-one-read')?.addEventListener('click', async (e) => {
+    await notifAction('read', Number(e.currentTarget.dataset.id));
+    location.reload();
+});
+
+document.getElementById('delete-one')?.addEventListener('click', async (e) => {
+    await notifAction('delete', Number(e.currentTarget.dataset.id));
+    location.reload();
+});
+</script>
+<?php endif; ?>
+
+<?php include 'includes/footer.php'; ?>
