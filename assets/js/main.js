@@ -251,7 +251,42 @@ document.addEventListener("DOMContentLoaded", function () {
     var paymentButton = document.querySelector("[data-payment-button]");
     if (paymentButton) {
         paymentButton.addEventListener("click", function () {
-            showToast("Panier confirmé. Notification créée.");
+            paymentButton.disabled = true;
+            paymentButton.textContent = "Confirmation en cours…";
+
+            fetch("includes/api_panier.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "confirm" })
+            })
+            .then(function (response) {
+                return response.text().then(function (text) {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error("Réponse invalide : " + text.substring(0, 200));
+                    }
+                });
+            })
+            .then(function (data) {
+                if (data.ok) {
+                    localStorage.removeItem("voyagevista_last_cart_url");
+                    window.location.href = "confirmation.php";
+                } else if (data.error === "Non connecté.") {
+                    showToast("Connectez-vous avant de confirmer votre panier.");
+                    paymentButton.disabled = false;
+                    paymentButton.textContent = "Confirmer le panier";
+                } else {
+                    showToast("Erreur : " + (data.error || "inconnue"));
+                    paymentButton.disabled = false;
+                    paymentButton.textContent = "Confirmer le panier";
+                }
+            })
+            .catch(function (err) {
+                showToast(err.message || "Erreur réseau.");
+                paymentButton.disabled = false;
+                paymentButton.textContent = "Confirmer le panier";
+            });
         });
     }
 
