@@ -2,7 +2,8 @@
 // ============================================================
 //  VoyageVista — compte.php  (version base de données)
 // ============================================================
-require_once 'includes/data.php';   // charge aussi la session
+require_once 'includes/data.php';
+require_once 'includes/roles.php';
 $pageTitle = 'Compte';
 
 // Si déjà connecté, prépare les infos utilisateur pour affichage
@@ -22,14 +23,34 @@ include 'includes/header.php';
         <div>
             <p class="eyebrow">Espace utilisateur</p>
             <h1>Bonjour, <?= htmlspecialchars($userName ?: $userEmail) ?> 👋</h1>
-            <p>Rôle : <strong><?= htmlspecialchars(ucfirst($userRole)) ?></strong></p>
+            <p>Rôle : <span class="role-badge role-badge-<?= htmlspecialchars($userRole) ?>"><?= htmlspecialchars(ucfirst($userRole)) ?></span></p>
         </div>
 
         <div class="account-links">
             <a class="btn btn-secondary" href="favoris.php">Mes favoris</a>
             <a class="btn btn-secondary" href="notifications.php">Mes notifications</a>
             <a class="btn btn-secondary" href="panier.php">Mon panier</a>
+            <?php if (isPartner()): ?>
+            <a class="btn btn-secondary" href="partenaire.php">Mes offres partenaire</a>
+            <?php endif; ?>
+            <?php if (isAdmin()): ?>
+            <a class="btn btn-primary" href="admin.php">Panneau d'administration</a>
+            <?php endif; ?>
         </div>
+
+        <?php if (isAdmin()): ?>
+        <div class="role-info-box role-info-admin">
+            <strong>Administrateur</strong> — Vous avez accès à la gestion complète des utilisateurs, des contenus et des rôles.
+        </div>
+        <?php elseif (isPartner()): ?>
+        <div class="role-info-box role-info-partenaire">
+            <strong>Partenaire</strong> — Vous pouvez proposer et gérer vos hébergements ou activités depuis l'espace partenaire.
+        </div>
+        <?php elseif (isClient()): ?>
+        <div class="role-info-box role-info-client">
+            <strong>Client</strong> — Vous pouvez réserver, gérer votre panier et consulter vos favoris.
+        </div>
+        <?php endif; ?>
 
         <form class="login-form" id="logout-form">
             <button class="btn btn-light" type="submit">Se déconnecter</button>
