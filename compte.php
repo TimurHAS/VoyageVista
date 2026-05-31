@@ -12,6 +12,30 @@ $userName  = $_SESSION['user_name']  ?? '';
 $userEmail = $_SESSION['user_email'] ?? '';
 $userRole  = $_SESSION['user_role']  ?? '';
 
+// Charge l'historique des réservations si connecté
+$bookings = [];
+if ($loggedIn) {
+    try {
+        $stmtB = $db->prepare(
+            'SELECT b.*,
+                    d.name AS dest_name,
+                    h.name AS hotel_name,
+                    t.city_from, t.city_to
+             FROM bookings b
+             LEFT JOIN destinations d ON d.id = b.destination_id
+             LEFT JOIN hotels h       ON h.id = b.hotel_id
+             LEFT JOIN transports t   ON t.id = b.transport_id
+             WHERE b.user_id = :u
+             ORDER BY b.created_at DESC
+             LIMIT 10'
+        );
+        $stmtB->execute([':u' => $_SESSION['user_id']]);
+        $bookings = $stmtB->fetchAll();
+    } catch (Exception $e) {
+        $bookings = []; // table pas encore créée
+    }
+}
+
 include 'includes/header.php';
 ?>
 
@@ -52,7 +76,42 @@ include 'includes/header.php';
         </div>
         <?php endif; ?>
 
-        <form class="login-form" id="logout-form">
+        <?php if (!empty($bookings)): ?>
+        <div class="bookings-history" style="margin-top:2rem;">
+            <h2 style="margin-bottom:1rem;">Mes réservations</h2>
+            <div class="bookings-list">
+            <?php foreach ($bookings as $bk): ?>
+                <article class="booking-item panel" style="padding:1rem;margin-bottom:1rem;border-left:4px solid var(--color-primary,#0077cc);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
+                        <div>
+                            <strong><?= htmlspecialchars($bk['dest_name'] ?? 'Destination inconnue') ?></strong>
+                            <?php if ($bk['hotel_name']): ?>
+                            — <?= htmlspecialchars($bk['hotel_name']) ?>
+                            <?php endif; ?>
+                        </div>
+                        <span class="role-badge role-badge-client" style="font-size:.8rem;">
+                            <?= $bk['status'] === 'confirmed' ? 'Confirmée' : 'Annulée' ?>
+                        </span>
+                    </div>
+                    <p class="muted" style="margin:.4rem 0 0;">
+                        <?php if ($bk['checkin'] && $bk['checkout']): ?>
+                        📅 <?= htmlspecialchars($bk['checkin']) ?> → <?= htmlspecialchars($bk['checkout']) ?>
+                        (<?= (int)$bk['nights'] ?> nuit<?= $bk['nights'] > 1 ? 's' : '' ?>)
+                        &nbsp;·&nbsp;
+                        <?php endif; ?>
+                        👥 <?= (int)$bk['adults'] ?> adulte<?= $bk['adults'] > 1 ? 's' : '' ?>
+                        <?php if ($bk['children'] > 0): ?>
+                        + <?= (int)$bk['children'] ?> enfant<?= $bk['children'] > 1 ? 's' : '' ?>
+                        <?php endif; ?>
+                        &nbsp;·&nbsp; 🗓 Réservé le <?= date('d/m/Y', strtotime($bk['created_at'])) ?>
+                    </p>
+                </article>
+            <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <form class="login-form" id="logout-form" style="margin-top:1.5rem;">
             <button class="btn btn-light" type="submit">Se déconnecter</button>
             <p class="form-message" id="logout-message"></p>
         </form>

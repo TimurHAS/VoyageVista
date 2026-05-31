@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS hotels (
     description      TEXT         DEFAULT NULL,
     official_url     VARCHAR(255) DEFAULT '#',
     reviews          INT UNSIGNED NOT NULL DEFAULT 50,
+    partner_id       INT UNSIGNED DEFAULT NULL,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (destination_id) REFERENCES destinations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -152,6 +153,7 @@ CREATE TABLE IF NOT EXISTS activities (
     period         VARCHAR(30)   DEFAULT NULL,
     included       JSON          DEFAULT NULL,
     image          TEXT          NOT NULL,
+    partner_id     INT UNSIGNED  DEFAULT NULL,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (destination_id) REFERENCES destinations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
