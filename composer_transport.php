@@ -211,14 +211,14 @@ include "includes/header.php";
                     </div>
                     <div class="kayak-route">
                         <div>
-                            <strong><?= sprintf("%02d:00", (int) $transport["depart_hour"]) ?></strong>
+                            <strong><?= sprintf("%02d:%02d", (int) $transport["depart_hour"], (int) $transport["depart_minute"]) ?></strong>
                             <span><?= htmlspecialchars($transport["from"]) ?></span>
                         </div>
                         <div class="route-line">
                             <span><?= htmlspecialchars($transport["duration"]) ?></span>
                         </div>
                         <div>
-                            <strong><?= sprintf("%02d:00", (int) $transport["return_hour"]) ?></strong>
+                            <strong><?= sprintf("%02d:%02d", (int) $transport["return_hour"], (int) $transport["arrival_minute"]) ?></strong>
                             <span><?= htmlspecialchars($transport["to"]) ?></span>
                         </div>
                     </div>

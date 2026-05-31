@@ -181,7 +181,7 @@ include "includes/header.php";
                     </div>
                     <div>
                         <span>Départ</span>
-                        <strong><?= sprintf("%02d:00", (int) $transport["depart_hour"]) ?></strong>
+                        <strong><?= sprintf("%02d:%02d", (int) $transport["depart_hour"], (int) $transport["depart_minute"]) ?></strong>
                     </div>
                     <div>
                         <span>Durée</span>
